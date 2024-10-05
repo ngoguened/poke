@@ -1,0 +1,66 @@
+"""Testing"""
+import unittest
+import model
+
+class TestModel(unittest.TestCase):
+    """Test the model"""
+
+    def test_move(self):
+        """test move class"""
+        scratch_move = model.Move(name="scratch", damage=10)
+        assert scratch_move.name == "scratch" and scratch_move.damage == 10
+    
+    def test_template(self):
+        """test template class"""
+        scratch_move = model.Move(name="scratch", damage=10)
+        rattata_template = model.Template(name="rattata", health=40, move=scratch_move)
+        assert rattata_template.name == "rattata" and rattata_template.health == 40 and rattata_template.move == scratch_move
+    
+    def test_card(self):
+        """test card class and get_move()"""
+        scratch_move = model.Move(name="scratch", damage=10)
+        rattata_template = model.Template(name="rattata", health=40, move=scratch_move)
+        rattata_card = model.Card(template=rattata_template)
+        assert rattata_card.template == rattata_template and rattata_card.health == 40
+        assert rattata_card.get_move() == scratch_move
+
+    def test_player(self):
+        """test player class and set_active_card() and move()"""
+        scratch_move = model.Move(name="scratch", damage=10)
+        rattata_template = model.Template(name="rattata", health=40, move=scratch_move)
+        rattata_card = model.Card(template=rattata_template)
+        player = model.Player(active_card=None, user=0)
+        assert not player.active_card and player.user == 0
+
+        player.set_active_card(rattata_card)
+        assert player.active_card == rattata_card
+
+        opponent_rattata_card = model.Card(template=rattata_template)
+        player.move(opponent_card=opponent_rattata_card)
+        assert opponent_rattata_card.health == 30
+
+    def test_model(self):
+        """Test model class and register() and move()"""
+        scratch_move = model.Move(name="scratch", damage=10)
+        rattata_template = model.Template(name="rattata", health=40, move=scratch_move)
+        m = model.Model(moves=[scratch_move],templates=[rattata_template])
+
+        assert not m.players[0] and not m.players[1]
+        m.register()
+        assert m.players[0] and not m.players[1]
+        m.register()
+        with self.assertRaises(Exception):
+            m.register()
+        
+        rattata_card_1 = model.Card(template=rattata_template)
+        m.players[0].set_active_card(rattata_card_1)
+
+        rattata_card_2 = model.Card(template=rattata_template)
+        m.players[1].set_active_card(rattata_card_2)
+
+        m.move(player=m.players[0])
+        assert m.players[1].active_card.health == 30
+
+if __name__ == '__main__':
+    unittest.main()
+    print("All tests pass\n")
