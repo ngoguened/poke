@@ -29,11 +29,8 @@ class TestModel(unittest.TestCase):
         scratch_move = model.Move(name="scratch", damage=10)
         rattata_template = model.Template(name="rattata", health=40, move=scratch_move)
         rattata_card = model.Card(template=rattata_template)
-        player = model.Player(active_card=None, user=0)
-        assert not player.active_card and player.user == 0
-
-        player.set_active_card(rattata_card)
-        assert player.active_card == rattata_card
+        player = model.Player(active_card=rattata_card, user=0)
+        assert player.active_card == rattata_card and player.user == 0
 
         opponent_rattata_card = model.Card(template=rattata_template)
         player.move(opponent_card=opponent_rattata_card)
@@ -47,16 +44,10 @@ class TestModel(unittest.TestCase):
 
         assert not m.players[0] and not m.players[1]
         m.register()
-        assert m.players[0] and not m.players[1]
+        assert m.players[0] and not m.players[1], [m.players[0], m.players[1]]
         m.register()
         with self.assertRaises(Exception):
             m.register()
-        
-        rattata_card_1 = model.Card(template=rattata_template)
-        m.players[0].set_active_card(rattata_card_1)
-
-        rattata_card_2 = model.Card(template=rattata_template)
-        m.players[1].set_active_card(rattata_card_2)
 
         m.move(player=m.players[0])
         assert m.players[1].active_card.health == 30

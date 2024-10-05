@@ -15,8 +15,8 @@ class Template:
         self.move = move
 
 class Card:
-    """stores a card template and the state of the card, for now this is only the health, 
-    but will include other card states like status and card class in the future."""
+    """Representation of active cards in the game. 
+    Stores the template associated with a card and its local state."""
     def __init__(self, template:Template):
         self.template = template
         self.health = template.health
@@ -32,36 +32,43 @@ class Player:
         self.active_card = active_card
         self.user = user
 
-    def set_active_card(self, card:Card):
-        """Sets the active card to replace None instance."""
-        self.active_card = card
-
     def move(self, opponent_card:Card):
         """Logic to have an active card use their move."""
         m = self.active_card.get_move()
         opponent_card.health -= m.damage
 
 class Model:
-    """Implements a move by a player, gets the state of the game, 
-    and allows players to register into the game."""
+    """Represents complete state of a game."""
     def __init__(self, moves, templates):
         self.moves = moves # In the future this will read from a file.
         self.templates = templates # In the future this will read from a file.
         self.players = [None, None]
 
+    def initialized(self) -> bool:
+        """Check if there are 2 players."""
+        return self.players[0] and self.players[1]
+
     def register(self) -> int:
         """Lets 2 players join the game."""
-        if not self.players[0]:
-            self.players[0] = Player(None, 0)
-            return 0
-        elif not self.players[1]:
-            self.players[1] = Player(None, 1)
-            return 1
-        else:
+        player = None
+        for i in range(0, 2):
+            if not self.players[i]:
+
+                scratch_move = Move(name="scratch", damage=10) # Constants to initialize the game with a card.
+                rattata_template = Template(name="rattata", health=40, move=scratch_move)
+                rattata_card = Card(template=rattata_template)
+
+                player = Player(rattata_card, i)
+                self.players[i] = player
+                break
+        if not player:
             raise ValueError("Two players are already in this game.")
+        return player.user
 
     def move(self, player:Player):
-        """Lets the player use a move aggainst the opponent."""
+        """Lets the player use a move against the opponent."""
+        if not self.initialized():
+            raise ValueError("Cannot make a move without 2 players.")
         opponent_user = int(not player.user)
         opponent:Player = self.players[opponent_user]
         player.move(opponent_card=opponent.active_card)
