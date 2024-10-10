@@ -1,10 +1,15 @@
 """Model module. Part of the MVC architecture."""
+import random
+
+RANDOM_DAMAGE = "random_damage"
+
 class Move:
     """Class that acts as a struct, storing inherent move information. 
     For now this is only the name and the damage."""
-    def __init__(self, name:str, damage:int):
+    def __init__(self, name:str, damage:int, special_effects:list):
         self.name = name
         self.damage = damage
+        self.special_effects = special_effects
 
 class Template:
     """Class that acts as a struct, storing inherent card information. 
@@ -34,8 +39,11 @@ class Player:
 
     def move(self, opponent_card:Card):
         """Logic to have an active card use their move."""
-        m = self.active_card.get_move()
-        opponent_card.health -= m.damage
+        move = self.active_card.get_move()
+        for s in move.special_effects:
+            if s == RANDOM_DAMAGE:
+                move.damage = 10*random.randint(0,2)
+        opponent_card.health -= move.damage
 
 class Model:
     """Represents complete state of a game."""
@@ -43,6 +51,8 @@ class Model:
         self.moves = moves # In the future this will read from a file.
         self.templates = templates # In the future this will read from a file.
         self.players = [None, None]
+        self.turn = None
+        self.winner = None
 
     def initialized(self) -> bool:
         """Check if there are 2 players."""
@@ -54,7 +64,7 @@ class Model:
         for i in range(0, 2):
             if not self.players[i]:
 
-                scratch_move = Move(name="scratch", damage=10) # Constants to initialize the game with a card.
+                scratch_move = Move(name="weird scratch", damage=0, special_effects=[RANDOM_DAMAGE]) # Constants to initialize the game with a card.
                 rattata_template = Template(name="rattata", health=40, move=scratch_move)
                 rattata_card = Card(template=rattata_template)
 
@@ -72,3 +82,24 @@ class Model:
         opponent_user = int(not player.user)
         opponent:Player = self.players[opponent_user]
         player.move(opponent_card=opponent.active_card)
+        self.turn = int( not bool(self.turn))
+
+    def start_game(self):
+        """Starts the game. Sets which player starts."""
+        if not self.initialized():
+            raise ValueError("Cannot start the game without 2 players.")
+        self.turn = random.randint(0,1)
+
+    def check_winner(self) -> bool:
+        """Check if one of the players have won the game. 
+        For now this is only if the active card reaches 0 health."""
+        player_1:Player = self.players[0]
+        player_2:Player = self.players[1]
+        if player_1.active_card.health <= 0:
+            self.winner = 1
+            return True
+        elif player_2.active_card.health <= 0:
+            self.winner = 0
+            return True
+        else:
+            return False
