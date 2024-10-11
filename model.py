@@ -5,7 +5,7 @@ RANDOM_DAMAGE = "random_damage"
 
 class Move:
     """Class that acts as a struct, storing inherent move information. 
-    For now this is only the name and the damage."""
+    For now this is only the name, damage, and special_effects."""
     def __init__(self, name:str, damage:int, special_effects:list):
         self.name = name
         self.damage = damage
@@ -50,9 +50,10 @@ class Model:
     def __init__(self, moves, templates):
         self.moves = moves # In the future this will read from a file.
         self.templates = templates # In the future this will read from a file.
-        self.players = [None, None]
-        self.turn = None
+        self.players:list[Player] = [None, None]
+        self.turn = 0
         self.winner = None
+        self.quit = False
 
     def initialized(self) -> bool:
         """Check if there are 2 players."""
@@ -60,18 +61,21 @@ class Model:
 
     def register(self) -> int:
         """Lets 2 players join the game."""
-        player = None
-        for i in range(0, 2):
-            if not self.players[i]:
-
-                scratch_move = Move(name="weird scratch", damage=0, special_effects=[RANDOM_DAMAGE]) # Constants to initialize the game with a card.
-                rattata_template = Template(name="rattata", health=40, move=scratch_move)
-                rattata_card = Card(template=rattata_template)
-
-                player = Player(rattata_card, i)
-                self.players[i] = player
-                break
-        if not player:
+        scratch_move = Move(name="weird scratch", damage=0, special_effects=[RANDOM_DAMAGE]) # Constants to initialize the game with a card.
+        rattata_template = Template(name="rattata", health=40, move=scratch_move)
+        if not self.players[0] and not self.players[1]:
+            rattata_card = Card(template=rattata_template)
+            player = Player(rattata_card, user=random.randint(0,1))
+            self.players[player.user] = player
+        elif not self.players[0]:
+            rattata_card = Card(template=rattata_template)
+            player = Player(rattata_card, 0)
+            self.players[0] = player
+        elif not self.players[1]:
+            rattata_card = Card(template=rattata_template)
+            player = Player(rattata_card, 1)
+            self.players[1] = player
+        else:
             raise ValueError("Two players are already in this game.")
         return player.user
 
@@ -79,27 +83,22 @@ class Model:
         """Lets the player use a move against the opponent."""
         if not self.initialized():
             raise ValueError("Cannot make a move without 2 players.")
-        opponent_user = int(not player.user)
+        opponent_user = (player.user+1) % 2
         opponent:Player = self.players[opponent_user]
         player.move(opponent_card=opponent.active_card)
-        self.turn = int( not bool(self.turn))
-
-    def start_game(self):
-        """Starts the game. Sets which player starts."""
-        if not self.initialized():
-            raise ValueError("Cannot start the game without 2 players.")
-        self.turn = random.randint(0,1)
+        self.turn = opponent_user
 
     def check_winner(self) -> bool:
-        """Check if one of the players have won the game. 
+        """Check if one of the players has won the game. 
         For now this is only if the active card reaches 0 health."""
-        player_1:Player = self.players[0]
-        player_2:Player = self.players[1]
-        if player_1.active_card.health <= 0:
+        if self.players[0].active_card.health <= 0:
             self.winner = 1
-            return True
-        elif player_2.active_card.health <= 0:
+        elif self.players[1].active_card.health <= 0:
             self.winner = 0
-            return True
-        else:
+
+        return self.winner is not None
+    
+    def playing(self) -> bool:
+        if self.quit:
             return False
+        return not self.check_winner()
