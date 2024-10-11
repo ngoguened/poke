@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+service DataSender {
+  // The service that sends the server's state to the client and the client's move to the server.
+  // Also sends chat messages from each client to the server, who relays the chat message to the other client.
+
+  rpc SendModel (ModelRequest) returns (ModelReply) {}
+
+  rpc SendMove (MoveRequest) returns (MoveReply) {}
+
+  rpc SendChat (stream ChatRequest) returns (stream ChatReply) {}
+}
+
+message ModelRequest {
+  // The request message containing the user id from the client for the server's model.
+  int user_id = 1;
+}
+
+message ModelReply {
+  // The response message containing the server model for the client who requested the model.
+  model.Model m = 1;
+}
+
+message MoveRequest {
+  // The request message from the server for the client's move whose turn it is. For now this needs no data.
+}
+
+message MoveReply {
+  // The response message containing the move from the client that the server requested a move from.
+  model.Move move = 1;
+}
+
+message ChatRequest {
+  // The request message from the client to save a chat from a user to the server.
+  int user_id = 1;
+  str message = 2;
+}
+
+message ChatReply {
+  // The response message from the server. This should send a chat update request to the other client.
+  int user_id = 1;
+  str message = 2;
+}
