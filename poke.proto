@@ -1,43 +1,59 @@
 syntax = "proto3";
 
-service DataSender {
+service Poke {
   // The service that sends the server's state to the client and the client's move to the server.
-  // Also sends chat messages from each client to the server, who relays the chat message to the other client.
 
-  rpc SendModel (ModelRequest) returns (ModelReply) {}
+  rpc GetModel (GetModelRequest) returns (GetModelReply) {}
 
-  rpc SendMove (MoveRequest) returns (MoveReply) {}
+  rpc Command (CommandRequest) returns (CommandReply) {}
 
-  rpc SendChat (stream ChatRequest) returns (stream ChatReply) {}
+  rpc Wait (WaitRequest) returns (WaitReply) {}
 }
 
-message ModelRequest {
+message RequestHeader {
+  int user_id = 1;
+}
+
+message Model {
+  int client_health = 1;
+  int opponent_health = 2;
+}
+
+message GetModelRequest {
   // The request message containing the user id from the client for the server's model.
-  int user_id = 1;
+  RequestHeader header = 1;
 }
 
-message ModelReply {
+message GetModelReply {
   // The response message containing the server model for the client who requested the model.
-  model.Model m = 1;
+  // For now this is only the health of the two players.
+  Model model = 1;
 }
 
-message MoveRequest {
-  // The request message from the server for the client's move whose turn it is. For now this needs no data.
+message Move {
+  // Since there is only one thing a move can mean the move class can be empty.
 }
 
-message MoveReply {
-  // The response message containing the move from the client that the server requested a move from.
-  model.Move move = 1;
+message CommandRequest {
+  // The request message from the server for the client's action whose turn it is.
+  // UpdateType specifies what type of action the server is expecting.
+  RequestHeader header = 1;
+  oneof command {
+    Move move = 1;
+  } 
 }
 
-message ChatRequest {
-  // The request message from the client to save a chat from a user to the server.
-  int user_id = 1;
-  str message = 2;
+message CommandReply {
+  // The response message containing whether the update to the server was valid or not.
+  Model diff = 1; //Only fills in the fields that change.
 }
 
-message ChatReply {
-  // The response message from the server. This should send a chat update request to the other client.
-  int user_id = 1;
-  str message = 2;
+message WaitRequest {
+  // The request message from the client to the server for the move of the other client.
+  RequestHeader header = 1;
+}
+
+message WaitReply {
+  // The response message containing the move of the other client.
+  Model diff = 1; //Only fills in the fields that change.
 }
