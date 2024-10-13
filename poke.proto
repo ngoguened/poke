@@ -11,12 +11,12 @@ service Poke {
 }
 
 message RequestHeader {
-  int user_id = 1;
+  int32 user_id = 1;
 }
 
 message Model {
-  int client_health = 1;
-  int opponent_health = 2;
+  int32 client_health = 1;
+  int32 opponent_health = 2;
 }
 
 message GetModelRequest {
@@ -39,7 +39,7 @@ message CommandRequest {
   // UpdateType specifies what type of action the server is expecting.
   RequestHeader header = 1;
   oneof command {
-    Move move = 1;
+    Move move = 2;
   } 
 }
 
