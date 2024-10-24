@@ -3,6 +3,8 @@ syntax = "proto3";
 service Poke {
   // The service that sends the server's state to the client and the client's move to the server.
 
+  rpc Register (RegisterRequest) returns (RegisterReply) {}
+
   rpc GetModel (GetModelRequest) returns (GetModelReply) {}
 
   rpc Command (CommandRequest) returns (CommandReply) {}
@@ -11,7 +13,16 @@ service Poke {
 }
 
 message RequestHeader {
-  int32 user_id = 1;
+  string user_id = 1;
+}
+
+message RegisterRequest {
+  RequestHeader header = 1;
+  bool first_connect = 2;
+}
+
+message RegisterReply {
+
 }
 
 message Model {
