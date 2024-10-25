@@ -1,0 +1,9 @@
+[{
+    "name": "scratch",
+    "damage": 10,
+    "special_effects": []
+}, {
+    "name": "weird_scratch",
+    "damage": 0,
+    "special_effects": ["random_damage"]
+}]

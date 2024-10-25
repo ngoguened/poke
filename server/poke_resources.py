@@ -1,5 +1,5 @@
 import json
-import model
+import model as model
 
 def read_moves_and_templates():
     moves = dict()

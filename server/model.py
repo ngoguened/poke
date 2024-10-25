@@ -1,5 +1,6 @@
 """Model module. Part of the MVC architecture."""
 import random
+import threading
 
 RANDOM_DAMAGE = "random_damage"
 
@@ -47,6 +48,16 @@ class Player:
 
 class Model:
     """Represents complete state of a game."""
+    class WaitPredicate:
+        """Callable class to evaluate if it's the client's turn."""
+        def __init__(self, model, player_number):
+            self.model = model
+            self.player_number = player_number
+        
+        def __call__(self):
+            print(f"expecting {self.player_number} got {self.model.turn}")
+            return self.model.turn == self.player_number and self.model.players[0] is not None and self.model.players[1] is not None
+
     def __init__(self, moves, templates):
         self.moves = moves # In the future this will read from a file.
         self.templates = templates # In the future this will read from a file.
@@ -54,6 +65,8 @@ class Model:
         self.turn = 0
         self.winner = None
         self.quit = False
+        self.lock = threading.Lock()
+        self.conditions = [threading.Condition(self.lock), threading.Condition(self.lock)]
 
     def initialized(self) -> bool:
         """Check if there are 2 players."""
@@ -63,6 +76,7 @@ class Model:
         """Lets 2 players join the game."""
         scratch_move = Move(name="weird scratch", damage=0, special_effects=[RANDOM_DAMAGE]) # Constants to initialize the game with a card.
         rattata_template = Template(name="rattata", health=40, move=scratch_move)
+        self.lock.acquire()
         if not self.players[0] and not self.players[1]:
             rattata_card = Card(template=rattata_template)
             player = Player(rattata_card, user=random.randint(0,1))
@@ -71,13 +85,26 @@ class Model:
             rattata_card = Card(template=rattata_template)
             player = Player(rattata_card, 0)
             self.players[0] = player
+            self.conditions[1].notify()
         elif not self.players[1]:
             rattata_card = Card(template=rattata_template)
             player = Player(rattata_card, 1)
             self.players[1] = player
+            self.conditions[0].notify()
         else:
             raise ValueError("Two players are already in this game.")
+        self.lock.release()
         return player.user
+
+    def wait(self, player_number:int):
+        print("before wait acquire")
+        self.lock.acquire()
+        print("after wait acquire")
+        wait_for_player_turn = self.WaitPredicate(model=self, player_number=player_number)
+        self.conditions[player_number].wait_for(wait_for_player_turn)
+        self.lock.release()
+        print("after wait release")
+
 
     def move(self, player:Player):
         """Lets the player use a move against the opponent."""
@@ -85,17 +112,28 @@ class Model:
             raise ValueError("Cannot make a move without 2 players.")
         opponent_user = (player.user+1) % 2
         opponent:Player = self.players[opponent_user]
+        print("before move acquire")
+        self.lock.acquire()
+        print("after move acquire")
         player.move(opponent_card=opponent.active_card)
+        # self.check_winner()
         self.turn = opponent_user
+        self.conditions[opponent_user].notify()
+        self.lock.release()
+        print("after move release")
+
 
     def check_winner(self) -> bool:
         """Check if one of the players has won the game. 
         For now this is only if the active card reaches 0 health."""
-        if self.players[0].active_card.health <= 0:
+        self.lock.acquire()
+        if self.players[0] is None or self.players[1] is None:
+            self.winner = None
+        elif self.players[0].active_card.health <= 0:
             self.winner = 1
         elif self.players[1].active_card.health <= 0:
             self.winner = 0
-
+        self.lock.release()
         return self.winner is not None
     
     def playing(self) -> bool:

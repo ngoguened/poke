@@ -1,8 +1,7 @@
 """Controller module. Part of the MVC architecture."""
 
 import curses
-
-import client.model as model
+import client_model as model
 
 class Controller:
     def __init__(self, m:model.Model, window_screen):
@@ -20,7 +19,8 @@ class Controller:
             return
         else:
             if key_input == ord(' '):
-                self.model.move(self.model.players[self.model.turn]) #TODO: Fix with RPC call.
+                return "move"
+
         self.window_screen.erase()
         self.window_screen.refresh()
 

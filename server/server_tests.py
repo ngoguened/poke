@@ -1,7 +1,7 @@
 """Testing"""
 import unittest
-import poke_servicer
-import poke_pb2
+import poke_servicer as poke_servicer
+import proto.poke_pb2 as poke_pb2
 
 def registerNickAndSkye():
     servicer = poke_servicer.PokeServicer()
@@ -27,7 +27,10 @@ class TestModel(unittest.TestCase):
         header = poke_pb2.RequestHeader(user_id="nick")
         request = poke_pb2.RegisterRequest(header=header, first_connect=True)
         servicer.Register(request, None)
-        assert servicer.players["nick"] == 0 or servicer.players["nick"] == 1, servicer.players # One player can join the game.
+        assert (servicer.players["nick"] == 0) != (servicer.players["nick"] == 1), servicer.players # One player can join the game.
+
+        servicer.Register(request, None)
+        assert (servicer.players["nick"] == 0) != (servicer.players["nick"] == 1), servicer.players # The same player cannot join twice.
 
         header = poke_pb2.RequestHeader(user_id="skye")
         request = poke_pb2.RegisterRequest(header=header, first_connect=True)
@@ -35,21 +38,31 @@ class TestModel(unittest.TestCase):
         assert (servicer.players["skye"] == 0 and servicer.players["nick"] == 1) or (servicer.players["nick"] == 0 and servicer.players["skye"] == 1) # Two players can join the game.
         
         header = poke_pb2.RequestHeader(user_id="pablo")
+        request = poke_pb2.RegisterRequest(header=header, first_connect=True)
         with self.assertRaises(Exception): # A third player cannot join the game.
             servicer.Register(request, None)
-        
+
         header = poke_pb2.RequestHeader(user_id="skye")
         request = poke_pb2.RegisterRequest(header=header, first_connect=False)
         servicer.Register(request, None)
         assert (servicer.players["skye"] == 0 and servicer.players["nick"] == 1) or (servicer.players["nick"] == 0 and servicer.players["skye"] == 1) # The same player can rejoin the game.
+
+    def testPokeServicerCheckClientIsWinner(self):
+        servicer = registerNickAndSkye()
+        assert servicer.checkClientIsWinner(player_number=servicer.players["skye"]) is None
+        servicer.model.winner = 1
+        assert servicer.checkClientIsWinner(player_number=servicer.players["skye"]) != servicer.checkClientIsWinner(player_number=servicer.players["nick"])
 
     def testPokeServicerGetModel(self):
         servicer = registerNickAndSkye()
         header = poke_pb2.RequestHeader(user_id="skye")
         request = poke_pb2.GetModelRequest(header=header)
         
-        skye_model = servicer.GetModel(request, None)
-        assert skye_model.client_health == 40 and skye_model.opponent_health == 40
+        model_response = servicer.GetModel(request, None)
+        skye_model = model_response.model
+        
+        assert skye_model.client_health == 40 and skye_model.opponent_health == 40, servicer.model.players[1].active_card.health
+        assert not skye_model.winner
 
     def testPokeServicerCommand(self):
         servicer = registerNickAndSkye()
@@ -61,8 +74,16 @@ class TestModel(unittest.TestCase):
             player2 = "nick"
         move = poke_pb2.Move()
         request = poke_pb2.CommandRequest(header=header_player1, move=move)
-        servicer.Command(request, None)
+        command_reply:poke_pb2.CommandReply = servicer.Command(request, None)
         assert servicer.model.turn == servicer.players[player2]
+        assert command_reply.diff.client_health == 0
+        #TODO: WITH WEIRD_SCRATCH THIS TEST SOMETIMES FAILS (when move rolls 0 damage.)
+        assert command_reply.diff.opponent_health != 0, f"{servicer.model.players[0].active_card.health} {servicer.model.players[1].active_card.health}"
+    
+    def testPokeServicerModel(self):
+        servicer = registerNickAndSkye()
+        servicer.model.wait(0)
+
 
 if __name__ == '__main__':
     unittest.main()
