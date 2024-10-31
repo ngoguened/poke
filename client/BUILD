@@ -29,8 +29,7 @@ py_binary(
     name = "client",
     srcs = ["client.py"],
     deps = [
-        "//client:client_model", "//client:controller", "//client:view", requirement("grpcio"),
-        "//proto:poke_pb2", "//proto:poke_pb2_grpc"],
+        "//client:client_model", "//client:controller", "//client:view", "//proto:poke_py_pb2_grpc", "//proto:poke_py_pb2"],
     visibility = ["//:__pkg__"],
     main = "client.py"
 )

@@ -1,16 +1,21 @@
-load("@pip//:requirements.bzl", "requirement")
-load("@aspect_rules_py//py:defs.bzl", "py_binary", "py_library")
+load("@com_google_protobuf//:protobuf.bzl", "py_proto_library")
+load("@rules_proto_grpc_python//:defs.bzl", "python_proto_library", "python_grpc_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
 
-py_library(
-    name = "poke_pb2",
-    srcs = ["poke_pb2.py"],
+proto_library(
+    name = "poke",
+    srcs = ["poke.proto"],
     visibility = ["//visibility:public"],
-    deps = [requirement("protobuf")]
 )
 
-py_library(
-    name = "poke_pb2_grpc",
-    srcs = ["poke_pb2_grpc.py"],
-    visibility = ["//visibility:public"],
-    deps = [requirement("protobuf")]
+python_proto_library(
+    name = "poke_py_pb2",
+    protos = [":poke"],
+    visibility = ["//visibility:public"]
+)
+
+python_grpc_library(
+    name = "poke_py_pb2_grpc",
+    protos = [":poke"],
+    visibility = ["//visibility:public"]
 )
