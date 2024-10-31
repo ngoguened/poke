@@ -1,5 +1,3 @@
-#TODO: Make client model take the diff as a method so that it's updated.
-
 import curses
 import grpc
 import logging

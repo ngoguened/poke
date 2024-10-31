@@ -2,10 +2,10 @@ from concurrent.futures import ThreadPoolExecutor
 import grpc
 import logging
 
-import poke_resources as poke_resources
+import server.poke_resources as poke_resources
 import proto.poke_pb2_grpc as poke_pb2_grpc
 import proto.poke_pb2 as poke_pb2
-import model as model
+import server.model as model
 
 
 class PokeServicer(poke_pb2_grpc.PokeServicer):
