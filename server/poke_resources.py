@@ -6,13 +6,17 @@ import server.model as model
 
 def read_moves_and_templates():
     moves = dict()
-    with open("server/moves_and_templates.textproto") as moves_and_templates_file:
+    templates = dict()
+    with open("server/moves_and_templates.textproto", encoding="ascii") as moves_and_templates_file:
         moves_and_templates_text_lines = [line for line in moves_and_templates_file.readlines()]
         moves_and_templates_text = ' '.join(moves_and_templates_text_lines)
         config = proto.config_pb2.Config()
         Parse(moves_and_templates_text, config)
-
-    return config.moves, config.templates
+    for m in config.moves:
+        moves[m.name] = m
+    for t in config.templates:
+        templates[t.name] = t
+    return moves, templates
 
 if __name__ == "__main__":
     read_moves_and_templates()
