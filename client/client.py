@@ -53,7 +53,7 @@ def main():
             controller_input = c.wait()
             if controller_input == "move":
                 request_header = poke_pb2.RequestHeader(user_id=m.user_id)
-                move = poke_pb2.Move()
+                move = poke_pb2.MoveCommand()
                 command_request = poke_pb2.CommandRequest(header=request_header, move=move)
                 command_reply:poke_pb2.CommandReply = stub.Command(command_request)
                 m.addServerDifferenceToClient(command_reply.diff)

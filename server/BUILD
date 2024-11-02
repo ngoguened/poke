@@ -5,7 +5,7 @@ load("@pip//:requirements.bzl", "requirement")
 py_binary(
     name = "poke_servicer",
     srcs = ["poke_servicer.py"],
-    deps = ["//server:model", "//server:poke_resources"],
+    deps = ["//server:model", "//server:poke_resources", "//proto:poke_py_pb2_grpc", "//proto:poke_py_pb2"],
     visibility = ["//:__pkg__"]
 )
 
@@ -19,6 +19,6 @@ py_binary(
     name = "poke_resources",
     srcs = ["poke_resources.py", "moves_and_templates.textproto"],
     # "//proto:resources_py_pb2",
-    deps = ["//proto:config_py_pb2",  "//server:model", requirement("grpcio")],
+    deps = ["//proto:config_py_pb2", "//server:model"],
     visibility = ["//:__pkg__"]
 )

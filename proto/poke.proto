@@ -43,7 +43,7 @@ message GetModelReply {
   Model model = 1;
 }
 
-message Move {
+message MoveCommand {
   // Since there is only one thing a move can mean the move class can be empty.
 }
 
@@ -52,7 +52,7 @@ message CommandRequest {
   // UpdateType specifies what type of action the server is expecting.
   RequestHeader header = 1;
   oneof command {
-    Move move = 2;
+    MoveCommand move = 2;
   } 
 }
 
