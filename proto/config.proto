@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+message Move {
+    string name = 1;
+    int32 damage = 2;
+    repeated string special_effects = 3;
+}
+
+message Template {
+    string name = 1;
+    int32 health = 2;
+    string moveKey = 3;
+}
+
+message Config {
+    repeated Move moves = 1;
+    repeated Template templates = 2;
+}

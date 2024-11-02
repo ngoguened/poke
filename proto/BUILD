@@ -19,3 +19,27 @@ python_grpc_library(
     protos = [":poke"],
     visibility = ["//visibility:public"]
 )
+
+proto_library(
+    name = "resources",
+    srcs = ["resources.proto"],
+    visibility = ["//visibility:public"]
+)
+
+python_proto_library(
+    name = "resources_py_pb2",
+    protos = [":resources"],
+    visibility = ["//visibility:public"]
+)
+
+proto_library(
+    name = "config",
+    srcs = ["config.proto"],
+    visibility = ["//visibility:public"]
+)
+
+python_proto_library(
+    name = "config_py_pb2",
+    protos = [":config"],
+    visibility = ["//visibility:public"]
+)
