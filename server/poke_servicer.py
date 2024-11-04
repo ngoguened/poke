@@ -75,7 +75,7 @@ class PokeServicer(poke_pb2_grpc.PokeServicer):
 def serve():
     server = grpc.server(ThreadPoolExecutor(max_workers=10))
     poke_pb2_grpc.add_PokeServicer_to_server(PokeServicer(), server)
-    server.add_insecure_port("[::]:50051")
+    server.add_insecure_port("[::]:50052")
     server.start()
     server.wait_for_termination()
 

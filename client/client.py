@@ -19,7 +19,7 @@ def main():
 
     # Create connection with the server
 
-    with grpc.insecure_channel('localhost:50051', options=(('grpc.enable_http_proxy', 0),)) as channel:
+    with grpc.insecure_channel('0.0.0.0:50052', options=(('grpc.enable_http_proxy', 0),)) as channel:
         stub = poke_pb2_grpc.PokeStub(channel)
 
     # Register for the first time.
