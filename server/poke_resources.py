@@ -7,7 +7,7 @@ import server.model as model
 def read_moves_and_templates():
     moves = dict()
     templates = dict()
-    with open("data/server/moves_and_templates.textproto", encoding="ascii") as moves_and_templates_file:
+    with open("server/moves_and_templates.textproto", encoding="ascii") as moves_and_templates_file:
         moves_and_templates_text_lines = [line for line in moves_and_templates_file.readlines()]
         moves_and_templates_text = ' '.join(moves_and_templates_text_lines)
         config = proto.config_pb2.Config()

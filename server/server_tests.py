@@ -72,14 +72,12 @@ class TestModel(unittest.TestCase):
         else:
             header_player1 = poke_pb2.RequestHeader(user_id="skye")
             player2 = "nick"
-        move = poke_pb2.Move()
+        move = poke_pb2.MoveCommand()
         request = poke_pb2.CommandRequest(header=header_player1, move=move)
         command_reply:poke_pb2.CommandReply = servicer.Command(request, None)
         assert servicer.model.turn == servicer.players[player2]
         assert command_reply.diff.client_health == 0
-        #TODO: WITH WEIRD_SCRATCH THIS TEST SOMETIMES FAILS (when move rolls 0 damage.)
-        assert command_reply.diff.opponent_health != 0, f"{servicer.model.players[0].active_card.health} {servicer.model.players[1].active_card.health}"
-    
+        
     def testPokeServicerModel(self):
         servicer = registerNickAndSkye()
         servicer.model.wait(0)

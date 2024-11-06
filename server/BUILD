@@ -1,5 +1,5 @@
 #TODO Google how to build a docker image where the docker rule includes the json binaries as arguments and includes them.
-load("@aspect_rules_py//py:defs.bzl", "py_binary", "py_library")
+load("@aspect_rules_py//py:defs.bzl", "py_binary", "py_library", "py_test")
 load("@pip//:requirements.bzl", "requirement")
 load("@rules_oci//oci:defs.bzl", "oci_load", "oci_push")
 load("//:py_layer.bzl", "py_oci_image")
@@ -15,6 +15,18 @@ py_library(
     name = "model",
     srcs = ["model.py"],
     visibility = ["//:__pkg__"]
+)
+
+py_test(
+    name = "server_tests",
+    srcs = ["server_tests.py"],
+    deps = ["//server:poke_servicer"],
+)
+
+py_test(
+    name = "model_tests",
+    srcs = ["model_tests.py"],
+    deps = ["//server:model"],
 )
 
 filegroup(
