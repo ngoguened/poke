@@ -10,66 +10,88 @@ import server.model as model
 
 class PokeServicer(poke_pb2_grpc.PokeServicer):
     def __init__(self):
-        moves_dict, templates_dict = poke_resources.read_moves_and_templates()
-        self.model = model.Model(
-            moves=list(moves_dict.values()),
-            templates=list(templates_dict.values()))
-        self.players = dict()
+        self.moves_dict, self.templates_dict = poke_resources.read_moves_and_templates()
+        self.active_models = dict()
+        self.active_players = dict()
+
+        self.waiting_model = None
         
-    def checkClientIsWinner(self, player_number) -> bool:
-        return self.model.winner == player_number if self.model.check_winner() else None
+    def checkPlayerIsWinnerInModel(self, player_number, stored_model:model.Model) -> bool:
+        return stored_model.winner == player_number if stored_model.check_winner() else None
 
     def createClientModel(self, user_id) -> poke_pb2.Model:
-        player_number = self.players[user_id]
-        if self.model.players[0] is None or self.model.players[1] is None:
+        player_number = self.active_players[user_id]
+        if user_id in self.active_models:
+            stored_model:model.Model = self.active_models[user_id]
+        else:
+            stored_model:model.Model = self.waiting_model
+        if stored_model.players[0] is None or stored_model.players[1] is None:
             opponent_health = None
         else:
-            opponent_health = self.model.players[(player_number+1)%2].active_card.health
-        return poke_pb2.Model(client_health=self.model.players[player_number].active_card.health,
+            opponent_health = stored_model.players[(player_number+1)%2].active_card.health
+        return poke_pb2.Model(client_health=stored_model.players[player_number].active_card.health,
                                                     opponent_health=opponent_health,
-                                                    winner=self.checkClientIsWinner(player_number),
-                                                    playing=self.model.playing())
+                                                    winner=self.checkPlayerIsWinnerInModel(player_number, stored_model),
+                                                    playing=stored_model.playing())
     
     def createDifferenceModel(self, user_id, client_snapshot:poke_pb2.Model) -> poke_pb2.Model:
-        player_number = self.players[user_id]
-        if not self.model.playing() or client_snapshot is None:
-            return poke_pb2.Model(winner=self.checkClientIsWinner(player_number))
-        return poke_pb2.Model(client_health=self.model.players[player_number].active_card.health-client_snapshot.client_health,
-                                                    opponent_health=self.model.players[(player_number+1)%2].active_card.health-client_snapshot.opponent_health,
-                                                    winner=self.checkClientIsWinner(player_number),
-                                                    playing=self.model.playing())
+        player_number = self.active_players[user_id]
+        stored_model:model.Model = self.active_models[user_id]
+        if not stored_model.playing() or client_snapshot is None:
+            return poke_pb2.Model(winner=self.checkPlayerIsWinnerInModel(player_number, stored_model))
+        return poke_pb2.Model(client_health=stored_model.players[player_number].active_card.health-client_snapshot.client_health,
+                                                    opponent_health=stored_model.players[(player_number+1)%2].active_card.health-client_snapshot.opponent_health,
+                                                    winner=self.checkPlayerIsWinnerInModel(player_number, stored_model),
+                                                    playing=stored_model.playing())
 
     def GetModel(self, request:poke_pb2.GetModelRequest, context):
         return poke_pb2.GetModelReply(model=self.createClientModel(request.header.user_id))
     
     def Command(self, request:poke_pb2.CommandRequest, context):
         client_snapshot = self.createClientModel(request.header.user_id)
-        if not self.model.playing():
+        stored_model:model.Model = self.active_models[request.header.user_id]
+
+        if not stored_model.playing():
             return poke_pb2.CommandReply(diff=self.createDifferenceModel(request.header.user_id, client_snapshot))
         if hasattr(request, "move"):
-            player_number = self.players[request.header.user_id]
-            player = self.model.players[player_number]
-            self.model.move(player)
+            player_number = self.active_players[request.header.user_id]
+            player = stored_model.players[player_number]
+            stored_model.move(player)
             return poke_pb2.CommandReply(diff=self.createDifferenceModel(request.header.user_id, client_snapshot))
         else:
             raise TypeError("Command is of unknown type.")
     
     def Register(self, request:poke_pb2.RegisterRequest, context):
-        if request.header.user_id in self.players:
+        if request.header.user_id in self.active_models or request.header.user_id in self.active_players:
             return poke_pb2.RegisterReply()
-        elif len(self.players) < 2:
-            player_number = self.model.register()
-            self.players[request.header.user_id] = player_number
+
+        if self.waiting_model is None:
+            # Acquire lock here?
+            self.waiting_model = model.Model(
+                                    moves=list(self.moves_dict.values()),
+                                    templates=list(self.templates_dict.values())
+                                    )
+            self.active_models[request.header.user_id] = self.waiting_model
+            self.active_players[request.header.user_id] = self.waiting_model.register()
+            # Release lock here?
             return poke_pb2.RegisterReply()
         else:
-            raise ValueError("Two players are already in this game.")
-
+            # Acquire lock here?
+            self.active_models[request.header.user_id] = self.waiting_model
+            self.active_players[request.header.user_id] = self.waiting_model.register()
+            self.waiting_model = None
+            # Release lock here?
+            return poke_pb2.RegisterReply()
     
     def Wait(self, request:poke_pb2.WaitRequest, context):
         client_snapshot = self.createClientModel(request.header.user_id)
-        if self.model.turn == request.header.user_id:
+        if request.header.user_id in self.active_models:
+            stored_model:model.Model = self.active_models[request.header.user_id]
+        else:
+            stored_model:model.Model = self.waiting_model
+        if stored_model.turn == self.active_players[request.header.user_id]:
             return poke_pb2.WaitReply(diff=self.createDifferenceModel(request.header.user_id, client_snapshot))
-        self.model.wait(player_number=self.players[request.header.user_id])
+        stored_model.wait(player_number=self.active_players[request.header.user_id])
         return poke_pb2.WaitReply(diff=self.createDifferenceModel(request.header.user_id, client_snapshot))
 
 def serve():
