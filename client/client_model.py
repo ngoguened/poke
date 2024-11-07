@@ -28,13 +28,17 @@ class Model:
         return client_bool
 
     def addServerDifferenceToClient(self, diff:poke_pb2.Model):
+        self.player_active_card_name = self.changeClientStr(self.player_active_card_name, diff.client_name)
         self.player_health = self.changeClientInt(self.player_health, diff.client_health)
+        self.opponent_active_card_name = self.changeClientStr(self.opponent_active_card_name, diff.opponent_name)
         self.opponent_health = self.changeClientInt(self.opponent_health, diff.opponent_health)
         self.playing = self.changeClientBool(self.playing, diff.playing)
         self.winner = self.changeClientBool(self.winner, diff.winner)
 
     def overrideClientModel(self, server_model:poke_pb2.Model):
+        self.player_active_card_name = server_model.client_name
         self.player_health = server_model.client_health
+        self.opponent_active_card_name = server_model.opponent_name
         self.opponent_health = server_model.opponent_health
         self.playing = server_model.playing
         self.winner = server_model.winner

@@ -139,4 +139,5 @@ class Model:
     def playing(self) -> bool:
         if self.quit:
             return False
-        return not self.check_winner()
+        self.check_winner()
+        return self.winner is None

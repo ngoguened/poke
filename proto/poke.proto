@@ -26,10 +26,12 @@ message RegisterReply {
 }
 
 message Model {
-  int32 client_health = 1;
-  optional int32 opponent_health = 2;
-  optional bool winner = 3;
-  bool playing = 4;
+  string client_name = 1;
+  int32 client_health = 2;
+  optional string opponent_name = 3;
+  optional int32 opponent_health = 4;
+  optional bool winner = 5;
+  bool playing = 6;
 }
 
 message GetModelRequest {
