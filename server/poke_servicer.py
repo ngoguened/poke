@@ -34,13 +34,19 @@ class PokeServicer(poke_pb2_grpc.PokeServicer):
         else:
             stored_model:model.Model = self.waiting_model
         if stored_model.players[0] is None or stored_model.players[1] is None:
+            opponent_name = None
             opponent_health = None
         else:
+            opponent_name = stored_model.players[(player_number+1)%2].active_card.template.name
             opponent_health = stored_model.players[(player_number+1)%2].active_card.health
-        return poke_pb2.Model(client_health=stored_model.players[player_number].active_card.health,
-                              opponent_health=opponent_health,
-                              winner=self.checkPlayerIsWinnerInModel(player_number, stored_model),
-                              playing=stored_model.playing())
+        return poke_pb2.Model(
+            client_name=stored_model.players[player_number].active_card.template.name,
+            client_health=stored_model.players[player_number].active_card.health,
+            opponent_name=opponent_name,
+            opponent_health=opponent_health,
+            winner=self.checkPlayerIsWinnerInModel(player_number, stored_model),
+            playing=stored_model.playing()
+            )
 
     def createDifferenceModel(self, user_id, client_snapshot:poke_pb2.Model) -> poke_pb2.Model:
         '''Creates a client model representing the delta before and after a move was made.'''
@@ -51,7 +57,9 @@ class PokeServicer(poke_pb2_grpc.PokeServicer):
                 winner=self.checkPlayerIsWinnerInModel(player_number, stored_model)
                 )
         return poke_pb2.Model(
+            client_name=stored_model.players[player_number].active_card.template.name,
             client_health=stored_model.players[player_number].active_card.health-client_snapshot.client_health,
+            opponent_name=stored_model.players[(player_number+1)%2].active_card.template.name,
             opponent_health=stored_model.players[(player_number+1)%2].active_card.health-client_snapshot.opponent_health,
             winner=self.checkPlayerIsWinnerInModel(player_number, stored_model),
             playing=stored_model.playing())
@@ -109,10 +117,6 @@ class PokeServicer(poke_pb2_grpc.PokeServicer):
             stored_model:model.Model = self.active_models[request.header.user_id]
         else:
             stored_model:model.Model = self.waiting_model
-        if stored_model.turn == self.active_players[request.header.user_id]:
-            return poke_pb2.WaitReply(
-                diff=self.createDifferenceModel(request.header.user_id, client_snapshot)
-                )
         stored_model.wait(player_number=self.active_players[request.header.user_id])
         return poke_pb2.WaitReply(
             diff=self.createDifferenceModel(request.header.user_id, client_snapshot)
