@@ -1,5 +1,3 @@
-#TODO: Make client model take the diff as a method so that it's updated.
-
 import curses
 import grpc
 import logging
@@ -21,7 +19,7 @@ def main():
 
     # Create connection with the server
 
-    with grpc.insecure_channel('localhost:50051', options=(('grpc.enable_http_proxy', 0),)) as channel:
+    with grpc.insecure_channel('0.0.0.0:50052', options=(('grpc.enable_http_proxy', 0),)) as channel:
         stub = poke_pb2_grpc.PokeStub(channel)
 
     # Register for the first time.
@@ -55,7 +53,7 @@ def main():
             controller_input = c.wait()
             if controller_input == "move":
                 request_header = poke_pb2.RequestHeader(user_id=m.user_id)
-                move = poke_pb2.Move()
+                move = poke_pb2.MoveCommand()
                 command_request = poke_pb2.CommandRequest(header=request_header, move=move)
                 command_reply:poke_pb2.CommandReply = stub.Command(command_request)
                 m.addServerDifferenceToClient(command_reply.diff)

@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+import "proto/config.proto";
+
+service Resources {
+    // The service that turns raw template and move data to their respective classes.
+
+    rpc GetMoves (GetMovesRequest) returns (GetMovesReply) {}
+
+    rpc GetTemplates (GetTemplatesRequest) returns (GetTemplatesReply) {}
+}
+
+message GetMovesRequest {
+
+}
+
+message GetMovesReply {
+    repeated Move moves = 1;
+}
+
+message GetTemplatesRequest{
+
+}
+
+message GetTemplatesReply {
+    repeated Template templates = 1;
+}

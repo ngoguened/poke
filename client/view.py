@@ -10,7 +10,7 @@ class View:
     def refresh(self):
         self.window_screen.clear()
         if not self.model.playing:
-            self.window_screen.addstr(f"You {"Win" if self.model.winner else "Lose"}!")
+            self.window_screen.addstr(f"You {'Win' if self.model.winner else 'Lose'}!")
         else:
             self.window_screen.addstr(f"[{self.model.player_active_card_name} {self.model.player_health}]  [{self.model.opponent_active_card_name} {self.model.opponent_health}]")
         self.window_screen.refresh()

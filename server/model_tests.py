@@ -1,6 +1,6 @@
 """Testing"""
 import unittest
-import server.model as model
+import model
 
 class TestModel(unittest.TestCase):
     """Test the model"""
