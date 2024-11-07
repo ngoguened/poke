@@ -128,6 +128,5 @@ def serve():
 
 
 if __name__ == "__main__":
-    '''Starts the service'''
     logging.basicConfig()
     serve()
