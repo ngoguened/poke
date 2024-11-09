@@ -14,6 +14,7 @@ py_binary(
 py_library(
     name = "model",
     srcs = ["model.py"],
+    deps = ["//proto:poke_py_pb2"],
     visibility = ["//:__pkg__"]
 )
 

@@ -117,7 +117,7 @@ class PokeServicer(poke_pb2_grpc.PokeServicer):
             stored_model:model.Model = self.active_models[request.header.user_id]
         else:
             stored_model:model.Model = self.waiting_model
-        stored_model.wait(player_number=self.active_players[request.header.user_id])
+        stored_model.wait(player_number=self.active_players[request.header.user_id], wait_type=request.wait_type)
         return poke_pb2.WaitReply(
             diff=self.createDifferenceModel(request.header.user_id, client_snapshot)
             )

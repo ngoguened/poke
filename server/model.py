@@ -1,6 +1,7 @@
 """Model module. Part of the MVC architecture."""
 import random
 import threading
+import proto.poke_pb2 as poke_pb2
 
 RANDOM_DAMAGE = "random_damage"
 
@@ -48,7 +49,16 @@ class Player:
 
 class Model:
     """Represents complete state of a game."""
-    class WaitPredicate:
+    class WaitForTwoPlayersPredicate:
+        """Callable class to evaluate if it's the client's turn."""
+        def __init__(self, model):
+            self.model = model
+
+        def __call__(self):
+            print("here")
+            return self.model.players[0] is not None and self.model.players[1] is not None
+
+    class WaitForTurnPredicate:
         """Callable class to evaluate if it's the client's turn."""
         def __init__(self, model, player_number):
             self.model = model
@@ -56,8 +66,8 @@ class Model:
         
         def __call__(self):
             print(f"expecting {self.player_number} got {self.model.turn}")
-            return self.model.turn == self.player_number and self.model.players[0] is not None and self.model.players[1] is not None
-
+            return self.model.turn == self.player_number
+        
     def __init__(self, moves, templates):
         self.moves = moves # In the future this will read from a file.
         self.templates = templates # In the future this will read from a file.
@@ -96,12 +106,15 @@ class Model:
         self.lock.release()
         return player.user
 
-    def wait(self, player_number:int):
+    def wait(self, player_number:int, wait_type):
         print("before wait acquire")
         self.lock.acquire()
         print("after wait acquire")
-        wait_for_player_turn = self.WaitPredicate(model=self, player_number=player_number)
-        self.conditions[player_number].wait_for(wait_for_player_turn)
+        if wait_type == poke_pb2.WaitRequest.WaitType.MOVE:
+            wait_predicate = self.WaitForTurnPredicate(model=self, player_number=player_number)
+        else:
+            wait_predicate = self.WaitForTwoPlayersPredicate(model=self)
+        self.conditions[player_number].wait_for(wait_predicate)
         self.lock.release()
         print("after wait release")
 
