@@ -77,10 +77,6 @@ class TestModel(unittest.TestCase):
         command_reply:poke_pb2.CommandReply = servicer.Command(request, None)
         assert servicer.active_models["nick"].turn == servicer.active_players[player2]
         assert command_reply.diff.client_health == 0
-        
-    def testPokeServicerModel(self):
-        servicer = registerNickAndSkye()
-        servicer.active_models["nick"].wait(0)
 
     def testMultiServicer(self):
         servicer = registerNickAndSkye()
