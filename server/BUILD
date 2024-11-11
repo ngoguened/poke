@@ -21,7 +21,7 @@ py_library(
 py_test(
     name = "server_tests",
     srcs = ["server_tests.py"],
-    deps = ["//server:poke_servicer"],
+    deps = ["//server:poke_servicer", requirement("locust")],
 )
 
 py_test(

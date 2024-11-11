@@ -1,4 +1,5 @@
 """Testing"""
+from locust import User, task, constant
 import unittest
 import poke_servicer as poke_servicer
 import proto.poke_pb2 as poke_pb2
@@ -114,6 +115,10 @@ class TestModel(unittest.TestCase):
         request = poke_pb2.CommandRequest(header=header, move=poke_pb2.MoveCommand())
         servicer.Command(request, None)
         assert "nick" not in servicer.active_players and "skye" not in servicer.active_players and "nick" not in servicer.active_models and "skye" not in servicer.active_models
+
+    def testLoadBalancing(self):
+        wait_time = constant(1)
+        pass
 
 if __name__ == '__main__':
     unittest.main()
