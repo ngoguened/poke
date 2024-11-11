@@ -53,6 +53,8 @@ class PokeServicer(poke_pb2_grpc.PokeServicer):
         player_number = self.active_players[user_id]
         stored_model:model.Model = self.active_models[user_id]
         if not stored_model.playing() or client_snapshot is None:
+            self.active_players.pop(user_id)
+            self.active_models.pop(user_id)
             return poke_pb2.Model(
                 winner=self.checkPlayerIsWinnerInModel(player_number, stored_model)
                 )

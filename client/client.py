@@ -51,6 +51,8 @@ def main():
             wait_response:poke_pb2.WaitReply = stub.Wait(wait_request)
             m.addServerDifferenceToClient(wait_response.diff)
             v.refresh()
+            if not m.playing:
+                break
             controller_input = c.wait()
             if controller_input == "move":
                 request_header = poke_pb2.RequestHeader(user_id=m.user_id)

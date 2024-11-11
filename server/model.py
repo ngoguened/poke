@@ -55,7 +55,6 @@ class Model:
             self.model = model
 
         def __call__(self):
-            print("here")
             return self.model.players[0] is not None and self.model.players[1] is not None
 
     class WaitForTurnPredicate:

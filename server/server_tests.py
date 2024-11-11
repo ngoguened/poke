@@ -94,6 +94,27 @@ class TestModel(unittest.TestCase):
         assert all([name in servicer.active_models for name in ["skye","nick","pablo","steve"]]) and all([name in servicer.active_players for name in ["skye","nick","pablo","steve"]])
         assert servicer.active_models["nick"] == servicer.active_models["skye"] and servicer.active_models["pablo"] == servicer.active_models["steve"]
 
+    def testUIDIsEjected(self):
+        servicer = registerNickAndSkye()
+        assert "nick" in servicer.active_players and "skye" in servicer.active_players and "nick" in servicer.active_models and "skye" in servicer.active_models
+        header = poke_pb2.RequestHeader(user_id="nick")
+        request = poke_pb2.CommandRequest(header=header, move=poke_pb2.MoveCommand())
+        servicer.Command(request, None)
+        header = poke_pb2.RequestHeader(user_id="skye")
+        request = poke_pb2.CommandRequest(header=header, move=poke_pb2.MoveCommand())
+        servicer.Command(request, None)
+        assert "nick" in servicer.active_players and "skye" in servicer.active_players and "nick" in servicer.active_models and "skye" in servicer.active_models
+
+        servicer.active_models["nick"].players[0].active_card.health = 0
+        servicer.active_models["nick"].check_winner()
+        header = poke_pb2.RequestHeader(user_id="nick")
+        request = poke_pb2.CommandRequest(header=header, move=poke_pb2.MoveCommand())
+        servicer.Command(request, None)
+        header = poke_pb2.RequestHeader(user_id="skye")
+        request = poke_pb2.CommandRequest(header=header, move=poke_pb2.MoveCommand())
+        servicer.Command(request, None)
+        assert "nick" not in servicer.active_players and "skye" not in servicer.active_players and "nick" not in servicer.active_models and "skye" not in servicer.active_models
+
 if __name__ == '__main__':
     unittest.main()
     print("All tests pass\n")
