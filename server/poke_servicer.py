@@ -75,7 +75,7 @@ class PokeServicer(poke_pb2_grpc.PokeServicer):
         client_snapshot = self.createClientModel(request.header.user_id)
         stored_model:model.Model = self.active_models[request.header.user_id]
 
-        if not stored_model.playing():
+        if not stored_model.playing() or stored_model.turn != self.active_players[request.header.user_id]:
             return poke_pb2.CommandReply(
                 diff=self.createDifferenceModel(request.header.user_id, client_snapshot)
                 )

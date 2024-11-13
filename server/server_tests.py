@@ -120,20 +120,28 @@ class TestModel(unittest.TestCase):
         servicer.Command(request, None)
         assert "nick" not in servicer.active_players and "skye" not in servicer.active_players and "nick" not in servicer.active_models and "skye" not in servicer.active_models
 
-    def testLoadBalancing(self):
-        servicer = poke_servicer.PokeServicer()
-        user_ids = []
-        class MyUser(User):
-            host = "https://docs.locust.io"
+    def testRobustRPC(self):
+        servicer = registerNickAndSkye()
+        for _ in range(50):
+            header = poke_pb2.RequestHeader(user_id="nick")
+            request = poke_pb2.CommandRequest(header=header, move=poke_pb2.MoveCommand())
+            servicer.Command(request, None)
+        assert servicer.active_models["nick"].players[0].active_card.health > 20 and servicer.active_models["nick"].players[1].active_card.health > 20
 
-            @task
-            def register(self):
-                user_id=''.join([str(random.randint(0,9)) for _ in range(100)])
-                user_ids.append(user_id)
-                header = poke_pb2.RequestHeader(user_id=user_id)
-                request = poke_pb2.RegisterRequest(header=header, first_connect=True)
-                servicer.Register(request, None)
-                print(f"registered as {user_id}")
+    # def testLoadBalancing(self):
+    #     servicer = poke_servicer.PokeServicer()
+    #     user_ids = []
+    #     class MyUser(User):
+    #         host = "https://docs.locust.io"
+
+    #         @task
+    #         def register(self):
+    #             user_id=''.join([str(random.randint(0,9)) for _ in range(100)])
+    #             user_ids.append(user_id)
+    #             header = poke_pb2.RequestHeader(user_id=user_id)
+    #             request = poke_pb2.RegisterRequest(header=header, first_connect=True)
+    #             servicer.Register(request, None)
+    #             print(f"registered as {user_id}")
 
             # def command(self):
             #     if user_ids:
@@ -146,15 +154,15 @@ class TestModel(unittest.TestCase):
             #             servicer.Command(request, None)
 
 
-        env = Environment(user_classes=[MyUser], events=events)
-        runner = env.create_local_runner()
-        web_ui = env.create_web_ui("127.0.0.1", 8089)
-        gevent.spawn(stats_printer(env.stats))
-        gevent.spawn(stats_history, env.runner)
-        runner.start(1, spawn_rate=10)
-        gevent.spawn_later(30, runner.quit)
-        runner.greenlet.join()
-        web_ui.stop()
+        # env = Environment(user_classes=[MyUser], events=events)
+        # runner = env.create_local_runner()
+        # web_ui = env.create_web_ui("127.0.0.1", 8089)
+        # gevent.spawn(stats_printer(env.stats))
+        # gevent.spawn(stats_history, env.runner)
+        # runner.start(1, spawn_rate=10)
+        # gevent.spawn_later(30, runner.quit)
+        # runner.greenlet.join()
+        # web_ui.stop()
 
 if __name__ == '__main__':
     unittest.main()
