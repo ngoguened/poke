@@ -44,8 +44,7 @@ filegroup(
 py_binary(
     name = "poke_resources",
     srcs = ["poke_resources.py"],
-    # "//proto:resources_py_pb2",
-    deps = ["//proto:config_py_pb2", "//server:model"],
+    deps = ["//proto:config_py_pb2", "//server:model", "//proto:resources_py_pb2"],
     visibility = ["//:__pkg__"],
     data = [":config"]
 )
