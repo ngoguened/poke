@@ -7,15 +7,15 @@ import server.model as model
 def read_moves_and_templates():
     moves = dict()
     templates = dict()
-
-    # print(resources.GetMovesRequest())
-    # print(resources.GetTemplatesRequest())
-    
-    with open("server/moves_and_templates.textproto", encoding="ascii") as moves_and_templates_file:
-        moves_and_templates_text_lines = [line for line in moves_and_templates_file.readlines()]
-        moves_and_templates_text = ' '.join(moves_and_templates_text_lines)
-        config = proto.config_pb2.Config()
-        Parse(moves_and_templates_text, config)
+    # Will try to find the data file from the docker's runfiles first. If not found, will try to find the unpackaged file.
+    try:
+        moves_and_templates_file = open("server/poke_servicer.runfiles/_main/server/moves_and_templates.textproto", encoding="ascii")
+    except IOError:
+        moves_and_templates_file = open("server/moves_and_templates.textproto", encoding="ascii")
+    moves_and_templates_text_lines = [line for line in moves_and_templates_file.readlines()]
+    moves_and_templates_text = ' '.join(moves_and_templates_text_lines)
+    config = proto.config_pb2.Config()
+    Parse(moves_and_templates_text, config)
     for m in config.moves:
         moves[m.name] = m
     for t in config.templates:
