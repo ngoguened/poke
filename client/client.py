@@ -28,7 +28,7 @@ def main():
         stub.Register(register_request)
         
     # Wait for both players to join.
-        wait_request = poke_pb2.WaitRequest(header=request_header)
+        wait_request = poke_pb2.WaitRequest(header=request_header, wait_type=poke_pb2.WaitRequest.WaitType.TWOPLAYERS)
         stub.Wait(wait_request)
 
     # Request the server model.
@@ -46,10 +46,13 @@ def main():
         c = controller.Controller(m, window_screen)
 
         while m.playing:
-            wait_request = poke_pb2.WaitRequest(header=request_header)
+            v.refresh()
+            wait_request = poke_pb2.WaitRequest(header=request_header, wait_type=poke_pb2.WaitRequest.WaitType.MOVE)
             wait_response:poke_pb2.WaitReply = stub.Wait(wait_request)
             m.addServerDifferenceToClient(wait_response.diff)
             v.refresh()
+            if not m.playing:
+                break
             controller_input = c.wait()
             if controller_input == "move":
                 request_header = poke_pb2.RequestHeader(user_id=m.user_id)

@@ -1,6 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
 import grpc
 import logging
+import threading
 
 import server.poke_resources as poke_resources
 import proto.poke_pb2_grpc as poke_pb2_grpc
@@ -20,6 +21,8 @@ class PokeServicer(poke_pb2_grpc.PokeServicer):
         self.active_players = dict()
 
         self.waiting_model = None
+
+        self.lock = threading.Lock()
 
     def checkPlayerIsWinnerInModel(self, player_number, stored_model:model.Model) -> bool:
         '''Given a model and the client's player number for that model, return True
@@ -53,6 +56,8 @@ class PokeServicer(poke_pb2_grpc.PokeServicer):
         player_number = self.active_players[user_id]
         stored_model:model.Model = self.active_models[user_id]
         if not stored_model.playing() or client_snapshot is None:
+            self.active_players.pop(user_id)
+            self.active_models.pop(user_id)
             return poke_pb2.Model(
                 winner=self.checkPlayerIsWinnerInModel(player_number, stored_model)
                 )
@@ -70,17 +75,25 @@ class PokeServicer(poke_pb2_grpc.PokeServicer):
 
     def Command(self, request:poke_pb2.CommandRequest, context):
         '''Fulfils a client's request to issue a command.'''
+        if request.header.user_id not in self.active_models or request.header.user_id not in self.active_players:
+            return poke_pb2.CommandReply()
+
         client_snapshot = self.createClientModel(request.header.user_id)
         stored_model:model.Model = self.active_models[request.header.user_id]
 
-        if not stored_model.playing():
+        if not stored_model.initialized():
+            return poke_pb2.CommandReply()
+
+        if not stored_model.playing() or stored_model.turn != self.active_players[request.header.user_id]:
             return poke_pb2.CommandReply(
                 diff=self.createDifferenceModel(request.header.user_id, client_snapshot)
                 )
         if hasattr(request, "move"):
             player_number = self.active_players[request.header.user_id]
             player = stored_model.players[player_number]
+            self.lock.acquire()
             stored_model.move(player)
+            self.lock.release()
             return poke_pb2.CommandReply(
                 diff=self.createDifferenceModel(request.header.user_id, client_snapshot)
                 )
@@ -92,22 +105,20 @@ class PokeServicer(poke_pb2_grpc.PokeServicer):
         if (request.header.user_id in self.active_models or
             request.header.user_id in self.active_players):
             return poke_pb2.RegisterReply()
-
+        self.lock.acquire()
         if self.waiting_model is None:
-            # Acquire lock here?
             self.waiting_model = model.Model(
                                     moves=list(self.moves_dict.values()),
                                     templates=list(self.templates_dict.values())
                                     )
             self.active_models[request.header.user_id] = self.waiting_model
             self.active_players[request.header.user_id] = self.waiting_model.register()
-            # Release lock here?
+            self.lock.release()
             return poke_pb2.RegisterReply()
-        # Acquire lock here?
         self.active_models[request.header.user_id] = self.waiting_model
         self.active_players[request.header.user_id] = self.waiting_model.register()
         self.waiting_model = None
-        # Release lock here?
+        self.lock.release()
         return poke_pb2.RegisterReply()
 
     def Wait(self, request:poke_pb2.WaitRequest, context):
@@ -117,7 +128,7 @@ class PokeServicer(poke_pb2_grpc.PokeServicer):
             stored_model:model.Model = self.active_models[request.header.user_id]
         else:
             stored_model:model.Model = self.waiting_model
-        stored_model.wait(player_number=self.active_players[request.header.user_id])
+        stored_model.wait(player_number=self.active_players[request.header.user_id], wait_type=request.wait_type)
         return poke_pb2.WaitReply(
             diff=self.createDifferenceModel(request.header.user_id, client_snapshot)
             )

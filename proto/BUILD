@@ -23,7 +23,8 @@ python_grpc_library(
 proto_library(
     name = "resources",
     srcs = ["resources.proto"],
-    visibility = ["//visibility:public"]
+    visibility = ["//visibility:public"],
+    deps = ["//proto:config"]
 )
 
 python_proto_library(

@@ -14,6 +14,7 @@ py_binary(
 py_library(
     name = "model",
     srcs = ["model.py"],
+    deps = ["//proto:poke_py_pb2"],
     visibility = ["//:__pkg__"]
 )
 
@@ -21,6 +22,12 @@ py_test(
     name = "server_tests",
     srcs = ["server_tests.py"],
     deps = ["//server:poke_servicer"],
+)
+
+py_test(
+    name = "load_balancing",
+    srcs = ["load_balancing.py"],
+    deps = ["//server:poke_servicer", requirement("locust")],
 )
 
 py_test(
@@ -37,8 +44,7 @@ filegroup(
 py_binary(
     name = "poke_resources",
     srcs = ["poke_resources.py"],
-    # "//proto:resources_py_pb2",
-    deps = ["//proto:config_py_pb2", "//server:model"],
+    deps = ["//proto:config_py_pb2", "//server:model", "//proto:resources_py_pb2"],
     visibility = ["//:__pkg__"],
     data = [":config"]
 )
